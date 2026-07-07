@@ -273,11 +273,25 @@ footer{border-top:1px solid var(--g200);background:#fff}
 .radar-container{max-width:460px;margin:0 auto}
 
 /* GAP ANALYSIS */
-.slack-insights-container{background:#fff;border-radius:14px;padding:26px;box-shadow:0 1px 3px rgba(0,0,0,.07);border:1px solid #e8f4fd;margin-bottom:24px;border-left:4px solid #4a154b}
-.slack-spinner{display:flex;align-items:center;gap:12px;color:#555;font-size:14px;padding:12px 0}
-.slack-spinner-icon{width:18px;height:18px;border:2.5px solid #e0e0e0;border-top-color:#4a154b;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+.slack-insights-container{background:#fff;border-radius:14px;padding:20px 24px;box-shadow:0 1px 3px rgba(0,0,0,.07);border:1px solid #e8f4fd;margin-bottom:24px;border-left:4px solid var(--blue)}
+.slack-spinner{display:flex;align-items:center;gap:12px;color:#555;font-size:14px;padding:8px 0}
+.slack-spinner-icon{width:18px;height:18px;border:2.5px solid #e0e0e0;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
-.slack-analysis-content{font-size:14px;line-height:1.7;color:#1a1a2e;white-space:pre-wrap;padding-top:4px}
+.slack-analysis-content{font-size:13.5px;line-height:1.6;color:#1a1a2e}
+.slack-analysis-content:empty{display:none}
+.ai-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:12px}
+.ai-col{border-radius:10px;padding:14px 16px}
+.ai-col-synth{background:#f0f7ff;border:1px solid #bfdbfe;grid-column:1/-1}
+.ai-col-strengths{background:#f0fdf4;border:1px solid #bbf7d0}
+.ai-col-dev{background:#fff5f5;border:1px solid #fecaca}
+.ai-col-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--g500);margin-bottom:10px}
+.ai-item{display:flex;flex-direction:column;gap:2px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.ai-item:last-child{border-bottom:none;padding-bottom:0}
+.ai-item-name{font-size:13px;font-weight:600;color:var(--g800)}
+.ai-item-tip{font-size:12px;color:var(--g600);line-height:1.5}
+.ai-badge{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:5px;vertical-align:middle}
+.ai-badge-hidden{background:#fef3c7;color:#92400e}
+.ai-badge-urgent{background:#fee2e2;color:#991b1b}
 .slack-analysis-content:empty{display:none}
 .gap-section{background:#fff;border-radius:14px;padding:26px;box-shadow:0 1px 3px rgba(0,0,0,.07);border:1px solid var(--g200);margin-bottom:24px}
 .gap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
@@ -445,6 +459,13 @@ footer{border-top:1px solid var(--g200);background:#fff}
       <!-- En-tête : noms, rôle, boutons action -->
       <div class="dv-hdr" id="dvHdr"></div>
 
+      <!-- Analyse IA — en premier -->
+      <div class="slack-insights-container" id="slackInsights">
+        <div class="section-title">🤖 Analyse IA — Synthèse LEAD</div>
+        <div class="section-sub">Synthèse générée automatiquement à partir du Gap Analysis</div>
+        <div id="slackAnalysisContent" class="slack-analysis-content"></div>
+      </div>
+
       <!-- KPI Cards : jauge globale + scores piliers + profil -->
       <div class="kpi-grid" id="kpiGrid"></div>
 
@@ -455,17 +476,6 @@ footer{border-top:1px solid var(--g200);background:#fff}
         <div class="radar-container">
           <canvas id="radarCanvas" aria-label="Radar de maturité par pilier" role="img"></canvas>
         </div>
-      </div>
-
-      <!-- Claude AI Insights -->
-      <div class="slack-insights-container" id="slackInsights">
-        <div class="section-title">🤖 Analyse IA — Claude</div>
-        <div class="section-sub">Synthèse générée automatiquement à partir du Gap Analysis</div>
-        <div class="slack-spinner" id="slackSpinner">
-          <div class="slack-spinner-icon"></div>
-          <span id="slackSpinnerText">🔄 Claude analyse les compétences de <span id="slackLeaderName">ce leader</span>...</span>
-        </div>
-        <div id="slackAnalysisContent" class="slack-analysis-content"></div>
       </div>
 
       <!-- Matrice Gap Analysis -->
@@ -1039,6 +1049,32 @@ window.resetEvaluation=function(){
 
 // ── ANALYSE IA (template) ─────────────────────────────────────────────────────
 
+const TIPS={
+  'Decision-Making Under Uncertainty':      ['Mobiliser sur les deals complexes et les arbitrages stratégiques à fort impact.','Exercices de décision sous contrainte de temps ; travailler les scénarios d\'ambiguïté en one-to-one hebdomadaire.'],
+  'Executive Presence & Credibility':       ['Exposer en comités de direction et en interactions client C-level ; témoigner aux leaders forums.','Préparer 1 intervention COMEX / trimestre ; feedback 360° ciblé sur la posture et la clarté du message.'],
+  'Resilience & Stress Management':         ['Positionner comme modèle de stabilité dans les périodes de transformation et de pression intense.','Identifier les déclencheurs de stress ; instituer des rituels de décompression et de recadrage mental en équipe.'],
+  'Meta-Cognition / AI Critical Thinking':  ['Impliquer dans les réflexions stratégiques IA pour challenger les biais et la fiabilité des outputs.','Analyser des outputs IA sur cas concrets ; former à l\'évaluation critique des modèles et à la détection des hallucinations.'],
+  'Ethical & Long-Term Thinking':           ['Désigner comme référent pour les décisions à fort impact sociétal ; valoriser en gouvernance IA.','Intégrer des critères éthiques dans les revues de pipeline ; participer à un comité de gouvernance IA interne.'],
+  'Talent Development':                     ['Confier le mentoring des AE juniors et l\'onboarding des nouvelles recrues ; impliquer dans le recrutement.','Plan de développement individualisé par AE avec objectifs de coaching mesurables sur 90 jours.'],
+  'Agentic Team Coaching':                  ['Déployer le coaching augmenté par la data sur toute l\'équipe ; partager les best practices.','Structurer chaque one-to-one autour des KPIs Salesforce et des insights IA ; former à l\'exploitation des dashboards.'],
+  'Team Culture & Inclusive Leadership':    ['Valoriser comme ambassadeur·rice de culture d\'équipe ; témoigner en instances RH et leaders forums.','Instaurer des rituels inclusifs (rétrospective, célébration, feedback peer) avec fréquence et format définis.'],
+  'Leading Through Change':                 ['Désigner comme champion·ne des transformations ; confier la communication des changements majeurs.','Appliquer un framework de conduite du changement (ADKAR ou Kotter) sur un projet en cours ; former les AE.'],
+  'Learning Agility & Evolutionary Mindset':['Exposer à des contextes nouveaux pour capitaliser sur la capacité d\'adaptation rapide.','Fixer 1 objectif d\'apprentissage trimestriel formalisé ; partager les enseignements avec l\'équipe en réunion mensuelle.'],
+  'Adaptability / Tolerance for Ambiguity': ['Mobiliser en priorité sur les projets à périmètre flou ou les situations de pivot stratégique.','Exercices de cadrage de situations ambiguës en one-to-one ; distinguer les inconnues actionnables des contraintes fixes.'],
+  'Influence Without Authority':            ['Impliquer dans les projets transverses comme interlocuteur·rice clé pour aligner les parties prenantes.','Identifier 3 parties prenantes à convaincre sur un enjeu actuel ; travailler la cartographie d\'influence et les leviers.'],
+  'Strategic Vision & Planning':            ['Associer aux exercices de planification BU ; solliciter pour challenger les roadmaps produits et commerciales.','Co-construire un plan à 12-18 mois pour son périmètre avec jalons, KPIs et hypothèses documentées.'],
+  'Customer 0 Posture':                     ['Positionner en lead sur les deals de co-innovation et les transformations clients stratégiques.','Formaliser une démarche Customer 0 sur 2-3 comptes : cartographie des enjeux, vision partagée, roadmap commune.'],
+  'CxO Engagement & AI Value Articulation': ['Exposer aux interactions C-level et aux présentations de valeur IA ; valoriser en avant-vente stratégique.','Simulations d\'entretiens CxO ; travailler le pitch de valeur IA sur 3 cas clients réels avec ROI chiffré.'],
+  'Industry Expertise':                     ['Positionner comme référent sectoriel en avant-vente et lors des événements clients / partenaires.','Plan de veille sectorielle structuré (2 sources/semaine) ; viser 1 certification ou intervention publique sur l\'industrie cible.'],
+  'Human–AI Orchestration':                ['Impliquer dans la conception des workflows augmentés et des processus homme-IA de l\'équipe.','Expérimenter l\'orchestration IA sur 1 cas d\'usage concret de l\'équipe ; documenter et partager les apprentissages.'],
+  'AI / Agentforce Literacy':               ['Associer aux projets Agentforce ; positionner comme relais de la stratégie IA Salesforce auprès des clients.','Compléter le parcours de certification Agentforce dans les 60 jours ; tester 1 cas d\'usage IA sur son périmètre.'],
+  'Cross-functional Orchestration':         ['Impliquer dans les projets transverses nécessitant alignement multi-équipes (Presales, CS, Marketing, Finance).','Rituels d\'alignement bimensuels avec les équipes adjacentes ; formaliser les interfaces et engagements mutuels.'],
+  'Systemic Thinking & Environment Design': ['Associer aux réflexions d\'architecture de compte et de design d\'écosystème partenaires.','Cartographie systémique de 2-3 comptes stratégiques ; identifier les leviers d\'influence indirects et les dépendances clés.'],
+  'Forecast Accuracy & CRM Hygiene':        ['Généraliser les pratiques de rigueur forecasting à l\'équipe ; impliquer dans les revues de pipeline régionales.','Revue de pipeline hebdomadaire avec cadre de qualification rigoureux ; objectif de précision forecast à 3 mois.'],
+  'Pipeline & NNAOV Leadership':            ['Exposer à la gestion de pipelines complexes et aux deals de transformation NNAOV à fort enjeu.','Plan de génération pipeline sur 90 jours ; renforcer les compétences de prospection stratégique et de networking C-level.'],
+  'Retention, Expansion & Conso':           ['Confier un portefeuille de comptes à fort potentiel d\'expansion ; valoriser dans les revues de renouvellement.','Stratégie d\'expansion sur 3-5 comptes prioritaires : mapping décisionnel, use cases de valeur, jalons de renouvellement.'],
+};
+
 function generateAnalysis(){
   const gap=calcGapAnalysis();
   const gs=calcGlobalScore();
@@ -1046,73 +1082,62 @@ function generateAnalysis(){
   const leaderName=[leaderFirst,leaderLast].filter(Boolean).join(' ')||'Ce leader';
   const score=gs!==null?+gs.toFixed(2):null;
 
-  const scoreMsg=score===null?'L\'évaluation est incomplète.'
-    :score>=3.5?`Avec un score global de <strong>${score}/4</strong>, ${leaderName} affiche un profil <strong>transformationnel</strong>, parmi les leaders les plus matures du référentiel LEAD.`
-    :score>=2.5?`Avec un score global de <strong>${score}/4</strong>, ${leaderName} présente un profil <strong>référent solide</strong>, au-dessus de la moyenne attendue pour ce rôle.`
-    :score>=1.5?`Avec un score global de <strong>${score}/4</strong>, ${leaderName} est <strong>opérationnel·le</strong> sur les fondamentaux mais dispose d'une marge de progression significative.`
-    :`Avec un score global de <strong>${score}/4</strong>, ${leaderName} est <strong>en phase de montée en compétence</strong> et nécessite un accompagnement structuré.`;
+  const lvlLabel=score===null?''
+    :score>=3.5?'transformationnel'
+    :score>=2.5?'référent'
+    :score>=1.5?'opérationnel':'en développement';
+  const scoreMsg=score===null?'Évaluation incomplète — renseignez les scores pour obtenir la synthèse.'
+    :score>=3.5?`Score <strong>${score}/4</strong> — profil <strong>transformationnel</strong>, parmi les leaders les plus matures du référentiel LEAD.`
+    :score>=2.5?`Score <strong>${score}/4</strong> — profil <strong>référent</strong>, au-dessus de la moyenne attendue pour ce rôle.`
+    :score>=1.5?`Score <strong>${score}/4</strong> — profil <strong>opérationnel</strong>, fondamentaux acquis avec une marge de progression significative.`
+    :`Score <strong>${score}/4</strong> — profil <strong>en développement</strong>, accompagnement structuré recommandé.`;
 
   const b=gap.builder.length, f=gap.friction.length, h=gap.hidden.length, tot=b+f+h;
-  const repartMsg=tot===0?'Aucune compétence évaluée pour le moment.'
-    :`Sur ${tot} compétences évaluées : <strong>${b} maîtrisées</strong>${h?`, <strong>${h} sous-utilisées</strong>`:''}${f?`, <strong>${f} en développement prioritaire</strong>`:''}.`;
+  const repartMsg=tot===0?'Aucune compétence évaluée.'
+    :`${tot} compétences évaluées — <strong style="color:#16a34a">${b} maîtrisées</strong>${h?` · <strong style="color:#d97706">${h} sous-utilisées</strong>`:''}${f?` · <strong style="color:#ef4444">${f} en friction</strong>`:''}`;
 
-  const TIPS={
-    'Decision-Making Under Uncertainty':     ['Valoriser dans les situations de transformation et de pivot stratégique.','Pratiquer des décisions sous contrainte de temps ; travailler les scénarios d\'ambiguïté en one-to-one.'],
-    'Executive Presence & Credibility':      ['Exposer davantage en comités de direction et en interactions client C-level.','Préparer des prises de parole régulières en COMEX ; solliciter un feedback 360° ciblé.'],
-    'Talent Development':                    ['Confier des missions de mentoring et de montée en puissance d\'AE juniors.','Mettre en place un plan de développement individualisé par AE ; fixer des objectifs de coaching mesurables.'],
-    'Business Acumen & Financial Literacy':  ['Impliquer dans les revues de pipeline stratégique et les arbitrages de ressources.','Suivre une formation sur la lecture financière ; participer aux revues business avec la Finance.'],
-    'Customer Value Architecture':           ['Positionner en lead sur les deals de transformation à ROI complexe.','Travailler des cas pratiques de construction de ROI ; co-construire une proposition de valeur sur un deal clé.'],
-    'Agentic Orchestration':                 ['Associer aux chantiers d\'automatisation et de déploiement Agentforce.','Se former aux outils Agentforce et à l\'IA générative ; expérimenter sur un projet pilote à faible risque.'],
-    'Change Management & Adoption':          ['Désigner comme champion·ne des initiatives de conduite du changement.','Lire les fondamentaux du change management ; piloter un mini-projet de transformation interne.'],
-    'Strategic Account Management':          ['Confier un portefeuille de comptes stratégiques à fort potentiel.','Formaliser un plan de compte sur 2-3 clients clés avec jalons et KPIs mesurables.'],
-    'Cross-functional Collaboration':        ['Impliquer dans les projets transverses et les alignements inter-équipes.','Organiser des rituels d\'alignement réguliers avec les équipes adjacentes (Presales, CS, Marketing).'],
-    'Data-Driven Coaching':                  ['Étendre la pratique aux revues d\'équipe et aux one-to-one structurés.','Structurer les one-to-one autour des métriques Salesforce ; former à l\'analyse de pipeline.'],
-    'Pipeline Governance':                   ['Généraliser la rigueur à l\'ensemble du cycle de forecasting.','Instaurer une revue de pipeline hebdomadaire avec un cadre de qualification rigoureux.'],
-    'Resilience & Stress Management':        ['Mobiliser comme point d\'ancrage dans les périodes de forte pression.','Identifier les sources de pression ; mettre en place des rituels de régulation et de décompression.'],
-  };
+  const def='Capitaliser sur cette compétence pour élever le niveau collectif.';
+  const defDev='Définir un plan d\'action avec jalons sur 90 jours ; intégrer dans le prochain entretien de développement.';
 
-  const strengths=[...gap.builder,...gap.hidden].slice(0,3);
-  const pointsForts=strengths.length===0
-    ?'<p style="margin:6px 0;color:#6b7280"><em>Aucune compétence maîtrisée identifiée.</em></p>'
+  const strengths=[...gap.builder,...gap.hidden];
+  const strengthsHtml=strengths.length===0
+    ?'<div class="ai-item"><span class="ai-item-tip" style="color:#6b7280;font-style:italic">Aucune compétence maîtrisée identifiée.</span></div>'
     :strengths.map(c=>{
-      const tip=(TIPS[c.name]||['Capitaliser sur cette maîtrise pour élever le niveau de l\'équipe.',''])[0];
-      const badge=gap.hidden.includes(c)?'<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:999px;margin-left:6px">💎 sous-utilisé</span>':'';
-      return `<p style="margin:8px 0"><strong>${c.name}</strong>${badge}<br><span style="color:#4b5563;font-size:13px">${tip}</span></p>`;
+      const isHidden=gap.hidden.some(x=>x.id===c.id);
+      const badge=isHidden?'<span class="ai-badge ai-badge-hidden">💎 sous-utilisé</span>':'';
+      const tip=(TIPS[c.name]||[def,''])[0];
+      const scores=`<span style="font-size:11px;color:#9ca3af;margin-left:4px">◎L${c.p} ⬡L${c.i}</span>`;
+      return `<div class="ai-item"><div class="ai-item-name">${c.name}${scores}${badge}</div><div class="ai-item-tip">${tip}</div></div>`;
     }).join('');
 
-  const devAreas=gap.friction.slice(0,3);
-  const priorites=devAreas.length===0
-    ?'<p style="margin:6px 0;color:#16a34a"><em>Aucune friction identifiée — profil homogène et mature.</em></p>'
+  const devAreas=gap.friction;
+  const devHtml=devAreas.length===0
+    ?'<div class="ai-item"><span class="ai-item-tip" style="color:#16a34a;font-style:italic">Aucune friction — profil homogène et mature.</span></div>'
     :devAreas.map((c,i)=>{
-      const action=(TIPS[c.name]||['','Définir un plan d\'action concret avec des jalons mesurables sur 3 mois.'])[1];
-      const urgent=c.p<=1||c.i<=1?'<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:999px;margin-left:6px">Priorité haute</span>':'';
-      return `<p style="margin:8px 0"><strong>${i+1}. ${c.name}</strong>${urgent}<br><span style="color:#4b5563;font-size:13px">${action}</span></p>`;
+      const urgent=c.p<=1||c.i<=1?'<span class="ai-badge ai-badge-urgent">Priorité haute</span>':'';
+      const action=(TIPS[c.name]||['',defDev])[1];
+      const scores=`<span style="font-size:11px;color:#9ca3af;margin-left:4px">◎L${c.p} ⬡L${c.i}</span>`;
+      return `<div class="ai-item"><div class="ai-item-name">${i+1}. ${c.name}${scores}${urgent}</div><div class="ai-item-tip">${action}</div></div>`;
     }).join('');
 
-  return `
-    <div style="margin-bottom:18px">
-      <h4 style="font-size:14px;font-weight:700;color:#032D60;margin:0 0 8px">Synthèse du profil</h4>
-      <p style="margin:6px 0">${scoreMsg}</p>
-      <p style="margin:6px 0">${repartMsg}</p>
-    </div>
-    <div style="margin-bottom:18px">
-      <h4 style="font-size:14px;font-weight:700;color:#032D60;margin:0 0 8px">Points forts à capitaliser</h4>
-      ${pointsForts}
-    </div>
-    <div>
-      <h4 style="font-size:14px;font-weight:700;color:#032D60;margin:0 0 8px">Priorités de développement</h4>
-      ${priorites}
-    </div>`;
+  return `<div class="ai-grid">
+  <div class="ai-col ai-col-synth">
+    <div class="ai-col-title">Synthèse</div>
+    <div style="font-size:13.5px">${scoreMsg} &nbsp;·&nbsp; ${repartMsg}</div>
+  </div>
+  <div class="ai-col ai-col-strengths">
+    <div class="ai-col-title">✅ Points forts à capitaliser</div>
+    ${strengthsHtml}
+  </div>
+  <div class="ai-col ai-col-dev">
+    <div class="ai-col-title">⚡ Priorités de développement</div>
+    ${devHtml}
+  </div>
+</div>`;
 }
 
 function fetchClaudeAnalysis(){
-  const spinner=document.getElementById('slackSpinner');
   const content=document.getElementById('slackAnalysisContent');
-  const nameSpan=document.getElementById('slackLeaderName');
-  const{leaderFirst,leaderLast}=S.profile;
-  const leaderName=[leaderFirst,leaderLast].filter(Boolean).join(' ')||'ce leader';
-  if(nameSpan) nameSpan.textContent=leaderName;
-  if(spinner) spinner.style.display='none';
   if(content) content.innerHTML=generateAnalysis();
 }
 
