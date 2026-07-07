@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salesforce LEAD — Référentiel Agentique</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f9fafb;color:#1f2937;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+a{color:inherit}
+:root{
+  --navy:#032D60;--blue:#0176D3;--cloud:#F0F7FF;--light:#D8EDFF;
+  --g50:#f9fafb;--g100:#f3f4f6;--g200:#e5e7eb;--g400:#9ca3af;--g500:#6b7280;--g600:#4b5563;--g700:#374151;--g800:#1f2937;
+  --amber:#d97706;--amber-bg:#fef3c7;--green:#16a34a;--green-bg:#dcfce7;
+  --l1:#ef4444;--l1bg:#fee2e2;--l1t:#991b1b;--l1b:#f87171;--l1e:#fecaca;
+  --l2:#f59e0b;--l2bg:#fef3c7;--l2t:#92400e;--l2b:#fbbf24;--l2e:#fde68a;
+  --l3:#3b82f6;--l3bg:#dbeafe;--l3t:#1e40af;--l3b:#60a5fa;--l3e:#bfdbfe;
+  --l4:#22c55e;--l4bg:#dcfce7;--l4t:#166534;--l4b:#4ade80;--l4e:#bbf7d0;
+}
+.wrap{max-width:860px;margin:0 auto;padding:0 24px}
+
+/* CHIP */
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px}
+.chip-L1{background:var(--l1bg);color:var(--l1t)}
+.chip-L2{background:var(--l2bg);color:var(--l2t)}
+.chip-L3{background:var(--l3bg);color:var(--l3t)}
+.chip-L4{background:var(--l4bg);color:var(--l4t)}
+
+/* HEADER */
+.hdr{background:var(--navy)}
+.hdr-bar{border-bottom:1px solid rgba(255,255,255,.1);padding:12px 0}
+.hdr-bar-in{display:flex;align-items:center;gap:10px}
+.sf-dot{width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.hdr-brand{font-size:14px;font-weight:600;color:rgba(255,255,255,.9)}
+.hdr-sep{color:rgba(255,255,255,.25)}
+.hdr-sub{font-size:13px;color:rgba(255,255,255,.45)}
+.hdr-hero{padding:48px 0 42px}
+.wip-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(1,118,211,.2);border:1px solid rgba(1,118,211,.4);border-radius:999px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--light);text-transform:uppercase;margin-bottom:22px}
+.wip-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hdr-h1{font-size:48px;font-weight:800;color:#fff;line-height:1.1;margin-bottom:8px}
+.hdr-lead{font-size:18px;font-weight:300;color:rgba(255,255,255,.55);margin-bottom:30px}
+.stat-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:34px}
+.stat{background:rgba(255,255,255,.1);border-radius:12px;padding:12px 20px;text-align:center;min-width:72px}
+.stat-n{font-size:24px;font-weight:700;color:#fff}
+.stat-l{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px}
+.why{border-left:4px solid var(--blue);padding-left:20px}
+.why-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--blue);margin-bottom:8px}
+.why p{font-size:13px;color:rgba(255,255,255,.65);line-height:1.65;margin-bottom:8px}
+.why p:last-child{margin-bottom:0}
+.legend-bar{border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.18);padding:12px 0}
+.legend-in{display:flex;flex-wrap:wrap;align-items:center;gap:16px}
+.legend-lbl{font-size:11px;color:rgba(255,255,255,.4);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-name{font-size:12px;color:rgba(255,255,255,.5)}
+
+/* MAIN */
+main{padding:40px 0 96px}
+.sec-sep{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.sec-sep-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--g400);white-space:nowrap}
+.sec-sep-line{flex:1;height:1px;background:var(--g200)}
+
+/* ROLE SELECTOR */
+.role-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:32px}
+.role-btn{border:2px solid var(--g200);background:#fff;border-radius:16px;padding:18px;text-align:left;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.role-btn:hover{box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.role-btn.sel-AVP{background:var(--blue);border-color:var(--blue)}
+.role-btn.sel-RVP{background:#4f46e5;border-color:#4f46e5}
+.role-btn.sel-GAM{background:#7c3aed;border-color:#7c3aed}
+.role-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.role-ico{display:flex;align-items:center;gap:8px}
+.role-emoji{font-size:22px}
+.role-id{font-size:22px;font-weight:800}
+.role-btn:not([class*='sel-']) .role-id{color:var(--g800)}
+.role-btn[class*='sel-'] .role-id,.role-btn[class*='sel-'] .role-check{color:#fff}
+.role-check{font-size:16px;color:var(--g400)}
+.role-tag{font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;display:inline-block;margin-bottom:8px}
+.role-btn.sel-AVP .role-tag,.role-btn.sel-RVP .role-tag,.role-btn.sel-GAM .role-tag{background:rgba(255,255,255,.2);color:rgba(255,255,255,.9)}
+.role-btn:not([class*='sel-'])[data-role=AVP] .role-tag{background:rgba(1,118,211,.1);color:var(--blue)}
+.role-btn:not([class*='sel-'])[data-role=RVP] .role-tag{background:#eef2ff;color:#4f46e5}
+.role-btn:not([class*='sel-'])[data-role=GAM] .role-tag{background:#f5f3ff;color:#7c3aed}
+.role-desc{font-size:12px;line-height:1.5}
+.role-btn:not([class*='sel-']) .role-desc{color:var(--g500)}
+.role-btn[class*='sel-'] .role-desc{color:rgba(255,255,255,.75)}
+
+/* TIP */
+.tip{display:flex;gap:12px;align-items:flex-start;background:var(--cloud);border:1px solid rgba(1,118,211,.2);border-radius:14px;padding:14px 18px;margin-bottom:36px}
+.tip-icon{font-size:18px;flex-shrink:0}
+.tip-text{font-size:13px;color:var(--g600);line-height:1.6}
+.tip-text strong{color:var(--navy)}
+
+/* PILLAR */
+.pillar{margin-bottom:48px}
+.pillar-hdr{background:#fff;border-radius:14px;padding:22px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.07);border-left:4px solid}
+.pillar-hdr.amber{border-color:#fbbf24}
+.pillar-hdr.blue{border-color:var(--blue)}
+.pillar-hdr.green{border-color:#22c55e}
+.pillar-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.pillar-emoji{font-size:26px}
+.pillar-name{font-size:20px;font-weight:800}
+.pillar-hdr.amber .pillar-name{color:var(--amber)}
+.pillar-hdr.blue .pillar-name{color:var(--blue)}
+.pillar-hdr.green .pillar-name{color:var(--green)}
+.pillar-cnt{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+.pillar-hdr.amber .pillar-cnt{background:var(--amber-bg);color:var(--amber)}
+.pillar-hdr.blue .pillar-cnt{background:var(--light);color:var(--blue)}
+.pillar-hdr.green .pillar-cnt{background:var(--green-bg);color:var(--green)}
+.pillar-desc{font-size:13px;color:var(--g500);line-height:1.5}
+.pillar-cards{padding-left:14px;border-left:2px solid var(--g100);display:flex;flex-direction:column;gap:10px}
+
+/* CARD */
+.card{background:#fff;border-radius:14px;border:1px solid var(--g200);box-shadow:0 1px 3px rgba(0,0,0,.05);overflow:hidden;transition:box-shadow .15s}
+.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.09)}
+.card-btn{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;width:100%;background:none;border:none;text-align:left}
+.card-left{display:flex;align-items:center;gap:10px;min-width:0}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:var(--g200);transition:background .25s}
+.dot.dL1{background:var(--l1b)}.dot.dL2{background:var(--l2b)}.dot.dL3{background:var(--l3b)}.dot.dL4{background:var(--l4b)}
+.card-name{font-size:14px;font-weight:600;color:var(--g800);line-height:1.3}
+.card-right{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:10px}
+.chev{color:var(--g400);font-size:11px;transition:transform .2s;display:inline-block}
+.card.open .chev{transform:rotate(180deg)}
+
+/* ACCORDION */
+.card-body{max-height:0;overflow:hidden;transition:max-height .25s ease-out}
+.card.open .card-body{max-height:3500px;transition:max-height .45s ease-in}
+.card-inner{padding:4px 20px 22px;border-top:1px solid var(--g100)}
+.callout{display:flex;gap:10px;margin:14px 0;background:var(--cloud);border:1px solid rgba(1,118,211,.18);border-radius:10px;padding:12px 14px}
+.callout-bar{width:3px;border-radius:999px;background:var(--blue);flex-shrink:0;align-self:stretch}
+.callout-text{font-size:13px;color:var(--g600);line-height:1.65;font-style:italic}
+.exp-lbl{display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--g400)}
+.exp-role{color:var(--blue)}
+.exp-box{background:var(--g50);border:1px solid var(--g200);border-radius:10px;padding:12px 14px;margin-bottom:18px}
+.exp-text{font-size:13px;color:var(--g700);line-height:1.65}
+
+/* EVAL GRID */
+.eval-wrap{background:rgba(249,250,251,.8);border:1px solid var(--g100);border-radius:14px;padding:14px 16px}
+.eval-hdr{display:flex;align-items:center;gap:7px;margin-bottom:12px}
+.eval-bar{width:3px;height:14px;border-radius:999px;background:var(--blue)}
+.eval-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--g400)}
+.eval-dim{margin-bottom:16px}.eval-dim:last-child{margin-bottom:0}
+.dim-lbl{display:flex;align-items:baseline;gap:7px;margin-bottom:8px}
+.dim-name{font-size:13px;font-weight:600;color:var(--g700)}
+.dim-hint{font-size:11px;color:var(--g400)}
+.eval-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.eb{border:2px solid;border-radius:10px;padding:9px 4px;text-align:center;transition:all .15s;background:#fff}
+.eb .eid{font-size:14px;font-weight:700}
+.eb .esh{font-size:10px;margin-top:2px}
+.eb.iL1{border-color:var(--l1e);color:var(--l1b)}.eb.iL1:hover{background:#fff5f5}
+.eb.iL2{border-color:var(--l2e);color:var(--l2b)}.eb.iL2:hover{background:#fffbeb}
+.eb.iL3{border-color:var(--l3e);color:var(--l3b)}.eb.iL3:hover{background:#eff6ff}
+.eb.iL4{border-color:var(--l4e);color:var(--l4b)}.eb.iL4:hover{background:#f0fdf4}
+.eb.aL1{background:var(--l1);border-color:var(--l1);color:#fff;box-shadow:0 3px 8px rgba(239,68,68,.3)}
+.eb.aL2{background:var(--l2);border-color:var(--l2);color:#fff;box-shadow:0 3px 8px rgba(245,158,11,.3)}
+.eb.aL3{background:var(--l3);border-color:var(--l3);color:#fff;box-shadow:0 3px 8px rgba(59,130,246,.3)}
+.eb.aL4{background:var(--l4);border-color:var(--l4);color:#fff;box-shadow:0 3px 8px rgba(34,197,94,.3)}
+.dbox{border-radius:9px;padding:9px 12px;margin-top:7px;font-size:12px;line-height:1.5;border:1px solid;display:none}
+.dbox.on{display:block;animation:sd .15s ease}
+@keyframes sd{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+.dbox.dL1{background:#fff5f5;border-color:var(--l1e);color:#7f1d1d}
+.dbox.dL2{background:#fffbeb;border-color:var(--l2e);color:#78350f}
+.dbox.dL3{background:#eff6ff;border-color:var(--l3e);color:#1e3a8a}
+.dbox.dL4{background:#f0fdf4;border-color:var(--l4e);color:#14532d}
+
+/* DASHBOARD */
+.dash{position:fixed;bottom:16px;right:16px;z-index:100;width:272px;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.15);border:1px solid var(--g200);overflow:hidden;display:none}
+.dash.on{display:block}
+.dash-tog{display:flex;align-items:center;gap:10px;padding:12px 16px;width:100%;background:none;border:none;transition:background .1s}
+.dash-tog:hover{background:var(--g50)}
+.dash-cnt{flex:1;text-align:left;font-size:12px;color:var(--g500)}
+.dash-cnt strong{color:var(--g800);font-weight:600}
+.dash-chev{color:var(--g400);font-size:11px;transition:transform .2s;display:inline-block}
+.dash.open .dash-chev{transform:rotate(180deg)}
+.dash-prog{height:3px;background:var(--g100)}
+.dash-prog-bar{height:100%;transition:width .4s,background .3s}
+.dash-body{display:none;padding:12px 16px;border-top:1px solid var(--g100)}
+.dash.open .dash-body{display:block}
+.dash-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--g400);margin-bottom:10px}
+.prow{margin-bottom:10px}
+.prow-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.prow-left{display:flex;align-items:center;gap:6px}
+.prow-emoji{font-size:13px}
+.prow-name{font-size:12px;font-weight:500;color:var(--g700)}
+.prow-cnt{font-size:11px;color:var(--g400)}
+.pbar-bg{height:5px;background:var(--g100);border-radius:999px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:999px;transition:width .4s}
+.dash-foot{padding:10px 16px;border-top:1px solid var(--g100);display:flex;align-items:center;justify-content:space-between}
+.dash-role{font-size:11px;color:var(--g400)}
+
+/* FOOTER */
+footer{border-top:1px solid var(--g200);background:#fff}
+.foot-in{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:18px 0;font-size:12px;color:var(--g400)}
+.foot-stats{display:flex;align-items:center;gap:8px}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .hdr-h1{font-size:32px}
+  .role-grid{grid-template-columns:1fr}
+  .eval-btns{gap:5px}
+  .dash{width:calc(100vw - 24px)}
+  .wrap{padding:0 16px}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-bar"><div class="wrap"><div class="hdr-bar-in">
+    <div class="sf-dot">SF</div>
+    <span class="hdr-brand">Salesforce</span>
+    <span class="hdr-sep">|</span>
+    <span class="hdr-sub">Programme LEAD Europe</span>
+  </div></div></div>
+
+  <div class="wrap">
+    <div class="hdr-hero">
+      <div class="wip-badge"><div class="wip-dot"></div>Ère Agentique — WIP</div>
+      <h1 class="hdr-h1">Salesforce LEAD</h1>
+      <p class="hdr-lead">Référentiel de Compétences de l'Ère Agentique</p>
+      <div class="stat-row">
+        <div class="stat"><div class="stat-n">3</div><div class="stat-l">Piliers</div></div>
+        <div class="stat"><div class="stat-n">22</div><div class="stat-l">Compétences</div></div>
+        <div class="stat"><div class="stat-n">4</div><div class="stat-l">Niveaux</div></div>
+        <div class="stat"><div class="stat-n">3</div><div class="stat-l">Rôles</div></div>
+      </div>
+      <div class="why">
+        <div class="why-lbl">Pourquoi maintenant</div>
+        <p>Nous sommes entrés dans une économie de valeur démontrée. Le NNAOV, le Headless et l'essor agentique d'Agentforce imposent un nouveau paradigme : nos leaders ne vendent plus des produits — ils orchestrent des transformations.</p>
+        <p>Dans ce contexte, la performance ne se mesure plus à l'ACV court terme, mais à la capacité de contextualiser chaque opportunité en impact business durable.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend-bar"><div class="wrap"><div class="legend-in">
+    <span class="legend-lbl">Niveaux :</span>
+    <div class="legend-item"><span class="chip chip-L1">L1</span><span class="legend-name">En développement</span></div>
+    <div class="legend-item"><span class="chip chip-L2">L2</span><span class="legend-name">Opérationnel</span></div>
+    <div class="legend-item"><span class="chip chip-L3">L3</span><span class="legend-name">Référent</span></div>
+    <div class="legend-item"><span class="chip chip-L4">L4</span><span class="legend-name">Transformationnel</span></div>
+  </div></div></div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="sec-sep"><span class="sec-sep-lbl">Filtrer par rôle</span><div class="sec-sep-line"></div></div>
+    <div class="role-grid" id="roleGrid"></div>
+
+    <div class="tip">
+      <span class="tip-icon">💡</span>
+      <p class="tip-text"><strong>Comment utiliser ce référentiel : </strong>Sélectionne un rôle ci-dessus, puis développe chaque compétence. Tu peux noter le leader sur deux dimensions (<strong>Maîtrise personnelle</strong> et <strong>Impact équipe/compte</strong>) en cliquant sur un niveau <strong>L1 → L4</strong>. Clique de nouveau pour désélectionner. Le tableau de bord de maturité apparaît en bas à droite dès la première évaluation.</p>
+    </div>
+
+    <div id="pillars"></div>
+  </div>
+</main>
+
+<footer><div class="wrap"><div class="foot-in">
+  <span>Salesforce LEAD Europe · Référentiel de l'ère agentique — WIP</span>
+  <div class="foot-stats"><span>3 piliers</span><span>·</span><span>22 compétences</span><span>·</span><span>4 niveaux</span></div>
+</div></div></footer>
+
+<div class="dash" id="dash">
+  <button class="dash-tog" id="dashTog">
+    <span style="color:var(--blue);font-size:14px">▦</span>
+    <span class="dash-cnt" id="dashCnt"><strong>0/22</strong> évaluées</span>
+    <span class="chip" id="dashChip"></span>
+    <span class="dash-chev">▲</span>
+  </button>
+  <div class="dash-prog"><div class="dash-prog-bar" id="dashBar" style="width:0"></div></div>
+  <div class="dash-body">
+    <div class="dash-sec">Par pilier</div>
+    <div id="dashPillars"></div>
+    <div class="dash-foot">
+      <span class="dash-role" id="dashRole"></span>
+      <span class="chip" id="dashOverall"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+const ROLES = {
+  AVP:{ icon:'🏗️', tag:"Architecte de transformation à l'échelle", desc:"Au-delà du pilotage de sa région, il engage l'ensemble de son segment dans un basculement vers le modèle AI-first — et son impact se mesure autant à la dynamique qu'il crée qu'aux chiffres qu'il délivre." },
+  RVP:{ icon:'🤖', tag:"Orchestrateur d'intelligence augmentée", desc:"Il continue de développer ses équipes et de driver la performance commerciale — et il intègre désormais une nouvelle dimension : celle de combiner ressources humaines et agents IA pour naviguer la complexité et accélérer le changement." },
+  GAM:{ icon:'🎯', tag:"Architecte de la valeur long terme", desc:"Il protège et développe ses comptes stratégiques — avec une ambition nouvelle : transformer chaque compte en Moonshot Agentique, en mobilisant les bonnes ressources, humaines et IA, au service d'un impact durable." },
+};
+
+const LVS = [
+  { id:'L1', label:'En développement',  s:'Dév.'  },
+  { id:'L2', label:'Opérationnel',       s:'Opéra.'},
+  { id:'L3', label:'Référent',           s:'Réf.'  },
+  { id:'L4', label:'Transformationnel',  s:'Trans.'},
+];
+
+const DIMS = [
+  { id:'personal', name:'Maîtrise personnelle',  hint:"Est-ce qu'il le fait lui-même ?" },
+  { id:'impact',   name:'Impact équipe / compte', hint:"Est-ce qu'il le génère autour de lui ?" },
+];
+
+const BARS = { L1:'#f87171', L2:'#fbbf24', L3:'#60a5fa', L4:'#4ade80' };
+
+const PILLARS = [
+  {
+    id:'p1', name:'Lead yourself', emoji:'🏆', color:'amber',
+    desc:'Compétences liées à la posture personnelle, la conscience de soi et la capacité à évoluer dans un environnement complexe et ambigu.',
+    comps:[
+      { id:'decision-making', name:'Decision-Making Under Uncertainty',
+        callout:"Opérer dans un environnement haute ambiguïté, sans attendre un playbook défini. Distinguer les décisions réversibles des irréversibles. Expérimenter, ajuster rapidement et mettre à jour ses convictions au fil de l'information.",
+        exp:{ AVP:"Définit le cadre de décision pour son organisation. Prend des paris stratégiques dans l'incertitude et assume la direction même sans toutes les données. Crée une culture de l'expérimentation chez ses RVPs.", RVP:"Prend des décisions tactiques rapides sur le pipeline, les deals complexes et les priorités d'équipe, sans escalader systématiquement. Gère l'ambiguïté agentique au quotidien.", GAM:"Navigue l'incertitude des cycles longs et des comptes stratégiques. Sait arbitrer entre rétention court terme et investissement long terme." },
+        grid:{ L1:"Conscient de la nécessité de décider dans l'ambiguïté, mais tend à attendre des données supplémentaires ou à escalader.", L2:"Prend des décisions dans l'incertitude de manière régulière, assume ses choix et ajuste rapidement.", L3:"Distingue avec fluidité décisions réversibles et irréversibles, crée une culture de l'expérimentation dans son équipe.", L4:"Son organisation est autonome face à l'ambiguïté — il a conçu les conditions pour que ses équipes décident sans lui." }},
+      { id:'meta-cognition', name:'Meta-Cognition / AI Critical Thinking',
+        callout:"Comprendre comment la connaissance est construite — et ses limites — particulièrement avec l'IA. Questionner les outputs IA, détecter les biais de modèle, maintenir son jugement humain. Éviter la sur-délégation et le sous-questionnement.",
+        exp:{ AVP:"Sait quand faire confiance à Agentforce et quand l'overrider. Promeut une culture de pensée critique vis-à-vis de l'IA dans toute son organisation.", RVP:"Questionne les recommandations IA sur les deals et le pipeline. Coache ses AEs à ne pas suivre aveuglément les suggestions Agentforce.", GAM:"Applique un regard critique sur les analyses IA relatives à ses comptes. Maintient son expertise humaine sur les dynamiques relationnelles que l'IA ne capte pas." },
+        grid:{ L1:"Utilise les outputs IA sans les questionner systématiquement.", L2:"Questionne régulièrement les recommandations Agentforce et maintient son propre jugement.", L3:"Coache activement son équipe à exercer un regard critique sur l'IA — pratique visible dans les 1:1.", L4:"Référence dans l'organisation sur la posture critique vis-à-vis de l'IA — influence au-delà de son périmètre." }},
+      { id:'executive-presence', name:'Executive Presence & Credibility',
+        callout:"Incarner une posture de leader reconnu en contexte CxO. Projeter confiance, clarté et autorité sans arrogance. Être la référence que les clients et l'équipe cherchent spontanément.",
+        exp:{ AVP:"Référence naturelle dans les conversations C-suite. Incarne la vision Salesforce avec conviction. Intervient dans les deals stratégiques comme accélérateur de closing.", RVP:"Crédible en exécutif dans les deals complexes. Capable de prendre la parole devant un board ou un COMEX. Inspire confiance à ses AEs par l'exemple.", GAM:"Posture de trusted advisor reconnue par les CxOs des comptes stratégiques. Tenue impeccable dans les EBRs et les conversations à enjeu." },
+        grid:{ L1:"Présence perceptible mais manque de consistance dans les contextes C-suite.", L2:"Intervient avec aisance en contexte exécutif, inspire confiance à son équipe par l'exemple.", L3:"Référence naturelle dans les conversations C-suite — son intervention accélère les deals.", L4:"Son leadership personnel est reconnu en interne et en externe comme un actif de l'organisation." }},
+      { id:'adaptability', name:'Adaptability / Tolerance for Ambiguity',
+        callout:"Opérer efficacement dans des contextes changeants, sans carte routière claire. Accepter l'inconfort de l'incertitude comme condition normale du leadership à l'ère agentique. Builder mindset : construire plutôt qu'attendre.",
+        exp:{ AVP:"Pilote la transformation agentique de son organisation sans roadmap complète. Anticipe les changements de marché et adapte la stratégie en temps réel.", RVP:"S'adapte rapidement aux nouvelles motions de vente IA. Gère les frictions d'équipe face au changement. Teste de nouvelles approches sans avoir la garantie du résultat.", GAM:"Adapte sa stratégie compte face à l'évolution des besoins clients et aux changements organisationnels chez le client." },
+        grid:{ L1:"Opère dans le changement avec inconfort visible — tend à attendre de la clarté avant d'agir.", L2:"S'adapte avec régularité aux nouvelles motions, gère les frictions sans les éviter.", L3:"Incarne le builder mindset — teste, apprend, ajuste et embarque son équipe dans cette logique.", L4:"Construit une organisation résiliente au changement — l'adaptabilité est une compétence collective, pas individuelle." }},
+      { id:'customer-zero', name:'Customer 0 Posture',
+        callout:"Être le premier utilisateur et ambassadeur des solutions Salesforce. Démontrer la valeur en live, dans de vraies situations. Ne pas déléguer systématiquement la démonstration produit.",
+        exp:{ AVP:"Raconte une histoire Customer 0 personnelle et convaincante. Démontre l'usage d'Agentforce dans son propre workflow. Inspire ses RVPs à adopter la même posture.", RVP:"Co-démo Agentforce en autonomie, score exec demo ≥ 4/5. Intervient en avant-vente sur les deals stratégiques. Ne délègue pas systématiquement au SE.", GAM:"Utilise activement les outils Salesforce dans son cycle compte. Capable de montrer un use case Agentforce déployé chez son client en réunion." },
+        grid:{ L1:"Teste ponctuellement les outils Salesforce dans son quotidien.", L2:"Utilise régulièrement Agentforce et les outils AI-first dans sa pratique managériale.", L3:"Partage ses usages en équipe, inspire ses RVPs à faire de même.", L4:"Incarne Customer 0 comme posture de leadership — ses comptes et son segment en ressentent l'impact." }},
+    ]
+  },
+  {
+    id:'p2', name:'Lead your team', emoji:'👥', color:'blue',
+    desc:'Compétences liées au management, au coaching et au développement des équipes.',
+    comps:[
+      { id:'talent-development', name:'Talent Development',
+        callout:"Recruter, coacher et retenir des équipes haute performance. Être un talent multiplier : chaque interaction avec un collaborateur le fait grandir. Créer les conditions de la réussite individuelle et collective.",
+        exp:{ AVP:"Recrute et développe des RVPs de niveau senior. Conçoit les parcours de carrière, anticipe les successions. Coache les RVPs sur leur propre style de leadership.", RVP:"Recrute, onboard et développe des AEs haute performance. Délivre un coaching hebdomadaire structuré (≥ 80% de l'équipe). Identifie les potentiels et les fait monter.", GAM:"Développe les compétences des ressources impliquées sur ses comptes (SE, CS, FDE). Onboard les nouveaux interlocuteurs internes sur la dynamique du compte." },
+        grid:{ L1:"Coache ponctuellement, sans rituel structuré.", L2:"Coaching hebdomadaire en place pour ≥ 80% de l'équipe — sujets de développement identifiés.", L3:"Anticipe les besoins de montée en compétence, construit des parcours personnalisés, identifie les potentiels.", L4:"Talent multiplier reconnu — son organisation produit des leaders qui à leur tour développent d'autres talents." }},
+      { id:'human-ai', name:'Human–AI Orchestration',
+        callout:"Concevoir une collaboration humain-IA efficace. Savoir quand confier une tâche à un agent, quand reprendre la main, et comment construire des boucles de feedback. Coacher son équipe sur cette orchestration.",
+        exp:{ AVP:"Définit les principes d'orchestration humain-IA pour son organisation. Identifie les use cases où les agents créent le plus de valeur pour son équipe. Pilote l'adoption IA de ses RVPs.", RVP:"Orchestre les agents IA dans le cycle de vente de son équipe. Fixe les règles du jeu : quand utiliser Agentforce, quand l'overrider. GIS Manager Index cible ≥ 80%.", GAM:"Utilise activement les agents IA dans son cycle compte (préparation EBR, analyse NRR, identification expansion). Implique le FDE en amont sur les use cases Agentforce." },
+        grid:{ L1:"Utilise occasionnellement les agents IA, sans logique d'orchestration définie.", L2:"Orchestre les agents IA dans son quotidien avec des règles claires — sait quand déléguer, quand reprendre la main.", L3:"Coache son équipe sur l'orchestration humain-IA — GIS Manager Index ≥ 80%.", L4:"Conçoit les principes d'orchestration pour son organisation — son équipe est en avance sur l'adoption IA." }},
+      { id:'leading-change', name:'Leading Through Change',
+        callout:"Engager son équipe dans la transformation agentique. Lever les résistances sans les ignorer. Maintenir l'engagement et la performance pendant les phases de transition.",
+        exp:{ AVP:"Pilote la transformation culturelle vers un modèle de vente AI-first. Gère les résistances au niveau RVP. Maintient la performance commerciale pendant la transition.", RVP:"Embarque ses AEs dans les nouvelles motions de vente agentiques. Gère les profils résistants avec pédagogie et fermeté. Célèbre les early wins pour créer de l'adhésion.", GAM:"Adapte son approche compte face aux changements organisationnels chez Salesforce et chez le client. Maintient la relation pendant les phases de transition." },
+        grid:{ L1:"Communique sur le changement mais peine à lever les résistances ou à maintenir l'engagement.", L2:"Embarque son équipe dans les nouvelles motions avec pédagogie, gère les frictions avec fermeté.", L3:"Crée de l'adhésion autour du changement — célèbre les early wins, transforme les résistants en ambassadeurs.", L4:"Pilote la transformation culturelle à l'échelle — son organisation est un modèle d'adoption agentique." }},
+      { id:'team-culture', name:'Team Culture & Inclusive Leadership',
+        callout:"Incarner et diffuser une culture d'innovation, d'inclusion et de confiance. Créer un environnement où chacun peut performer et innover. Être porteur des valeurs Salesforce au quotidien.",
+        exp:{ AVP:"Définit et incarne la culture de son organisation. Garant des valeurs Salesforce à tous les niveaux. Crée un environnement où l'innovation et la prise de risque sont encouragées.", RVP:"Crée une dynamique d'équipe positive, inclusive et performante. Célèbre les succès collectifs. Gère les tensions avec équité et transparence.", GAM:"Contribue à la culture d'équipe. Partage ses best practices sur ses comptes. Collabore activement avec les autres GAMs et les équipes transverses." },
+        grid:{ L1:"Conscient des enjeux culturels, mais l'incarnation reste ponctuelle.", L2:"Culture d'équipe positive et inclusive — tensions gérées avec équité, succès collectifs célébrés.", L3:"Garant des valeurs Salesforce dans les décisions du quotidien — son équipe est un exemple de culture saine.", L4:"Sa culture d'équipe rayonne au-delà de son périmètre — référence pour les autres leaders." }},
+      { id:'agentic-coaching', name:'Agentic Team Coaching',
+        callout:"Coacher son équipe sur les nouvelles motions de vente IA : qualification de use cases agentiques, pipeline Agentforce, démonstration produit. Faire monter en compétence collectivement et rapidement.",
+        exp:{ AVP:"Définit le standard de coaching agentique pour ses RVPs. S'assure que chaque RVP est capable de coacher ses AEs sur Agentforce. Mesure la progression via des KPIs d'adoption IA.", RVP:"Coache chaque AE sur la qualification de use cases Agentforce, la démo et la conversion post-démo. Intègre le coaching agentique dans les 1:1 hebdomadaires.", GAM:"Partage les use cases Agentforce déployés chez ses clients avec l'équipe. Guide les SE et FDE sur les spécificités agentiques de ses comptes." },
+        grid:{ L1:"Aborde les sujets agentiques en équipe de manière ponctuelle.", L2:"Coaching agentique intégré dans les 1:1 hebdomadaires — use cases Agentforce traités régulièrement.", L3:"Son équipe est autonome sur la qualification et la démo Agentforce — les KPIs d'adoption progressent.", L4:"Définit le standard de coaching agentique pour l'organisation — ses méthodes sont répliquées par d'autres RVPs." }},
+      { id:'learning-agility', name:'Learning Agility & Evolutionary Mindset',
+        callout:"Mettre à jour activement ses modèles mentaux. Construire des rituels d'apprentissage. Diagnostiquer la maturité de son équipe et adapter son approche. L'ère agentique rend l'apprentissage continu non optionnel.",
+        exp:{ AVP:"Construit des rituels d'apprentissage dans le rythme organisationnel (debriefs, rétrospectives, partage de pratiques). Met à jour sa vision stratégique en intégrant les nouvelles informations marché.", RVP:"Pratique le debrief régulier avec son équipe (wins, losses, nouvelles motions). S'auto-forme activement sur Agentforce et partage ses apprentissages.", GAM:"Apprend des déploiements IA chez ses clients. Partage les retours terrain avec l'équipe produit et enablement. Adapte sa stratégie compte en fonction des nouvelles capacités Agentforce." },
+        grid:{ L1:"Apprend de manière réactive — principalement quand contraint par une situation nouvelle.", L2:"S'auto-forme activement, pratique le debrief régulier et partage ses apprentissages avec l'équipe.", L3:"Construit des rituels d'apprentissage dans le rythme de l'organisation — culture du feedback installée.", L4:"Son organisation apprend en continu — il a conçu les conditions systémiques pour que l'évolution soit collective." }},
+      { id:'influence', name:'Influence Without Authority',
+        callout:"Créer de l'alignement sans s'appuyer sur la hiérarchie. Orchestrer des ressources transverses (SE, CS, Marketing, Partners) sans autorité directe. Traduire la complexité en narratives fédératrices.",
+        exp:{ AVP:"Aligne les organisations transverses (Marketing, CS, SE, Sales Strategy) sur les priorités de son segment. Fédère autour d'une vision commune sans recourir à l'autorité formelle.", RVP:"Mobilise SE, CS, FDE et Marketing sur les deals stratégiques. Crée de l'énergie collective autour des opportunités à fort enjeu.", GAM:"Orchestre ≥ 3 rôles internes par compte (SE, FDE, CS). Obtient l'engagement des ressources sans ligne hiérarchique. Crée des Teaming Agreements structurés." },
+        grid:{ L1:"Mobilise les ressources transverses de manière ponctuelle — dépend encore largement de la hiérarchie.", L2:"Crée de l'alignement régulier avec les équipes transverses — Teaming Agreements en place.", L3:"Fédère autour d'une vision narrative claire — les ressources s'engagent spontanément sur ses priorités.", L4:"Référence d'influence organisationnelle — son mode de fonctionnement est cité comme modèle en interne." }},
+    ]
+  },
+  {
+    id:'p3', name:'Lead your business', emoji:'💼', color:'green',
+    desc:"Compétences liées à l'exécution commerciale, la stratégie et la maîtrise de l'ère agentique.",
+    comps:[
+      { id:'strategic-vision', name:'Strategic Vision & Planning',
+        callout:"Définir et exécuter une stratégie de croissance sectorielle ambitieuse et scalable. Anticiper les évolutions du marché. Construire des plans d'action clairs, mesurables et adaptables.",
+        exp:{ AVP:"Conçoit et porte la stratégie de croissance de son segment (verticale, géographie, produits). Aligne son organisation sur des priorités claires. Anticipe les disruptions liées à l'IA dans son marché.", RVP:"Traduit la stratégie AVP en plans d'exécution pour son équipe. Définit les priorités territoriales, les account plans et les motions de vente adaptées.", GAM:"Construit un plan de compte multi-années intégrant les big bets Agentforce. Anticipe les évolutions du compte et adapte la stratégie en continu." },
+        grid:{ L1:"Opère principalement sur le court terme — le plan existe mais manque de profondeur ou d'ancrage marché.", L2:"Plan de croissance structuré, aligné sur les priorités AVP, avec des jalons mesurables.", L3:"Anticipe les disruptions IA dans son marché, adapte la stratégie en temps réel — son plan est une référence interne.", L4:"Vision stratégique qui influence le GTM de l'organisation — ses analyses sont citées au-delà de son segment." }},
+      { id:'agentforce-literacy', name:'AI / Agentforce Literacy',
+        callout:"Comprendre les capacités réelles d'Agentforce et des solutions IA Salesforce. Qualifier des use cases agentiques pertinents pour les clients. Piloter l'adoption IA dans son périmètre.",
+        exp:{ AVP:"Maîtrise le positionnement Agentforce au niveau marché. Sait articuler la valeur IA en contexte CxO. Pilote la roadmap d'adoption Agentforce de son organisation.", RVP:"Qualifie les opportunités Agentforce (win rate cible 35%). Maîtrise le discours produit IA pour coacher ses AEs. Suit les KPIs d'adoption Agentforce (deals stage 3+).", GAM:"Identifie ≥ 1 use case Agentforce par compte. Co-construit le use case avec un champion interne chez le client. Pilote le déploiement et en mesure l'impact." },
+        grid:{ L1:"Connaissance générale d'Agentforce — peine à qualifier des use cases clients de manière autonome.", L2:"Qualifie des opportunités Agentforce de manière régulière — discours produit maîtrisé pour le coaching AE.", L3:"Co-construit des use cases avec les clients, pilote les déploiements et mesure l'impact — win rate ≥ 35%.", L4:"Référence IA de l'organisation — ses use cases sont répliqués, son discours CxO est cité comme modèle." }},
+      { id:'pipeline', name:'Pipeline & NNAOV Leadership',
+        callout:"Piloter la génération de pipeline net new avec des rituels structurés et data-driven. Assurer une couverture pipeline suffisante. Coacher les équipes sur les motions de prospection modernes.",
+        exp:{ AVP:"Garantit la couverture pipeline de son organisation (cible 3x). Définit les rituels de génération pipeline pour ses RVPs. Pilote les big bets (deals > 1M€).", RVP:"Coache ses AEs sur la génération de pipeline net new. Organise des prospection sprints réguliers. Surveille la couverture pipeline individuellement et collectivement.", GAM:"Identifie et développe les big bets sur ses comptes (≥ 1 deal > 1M€ actif par compte). Pipeline Agentforce TCV > 500k€." },
+        grid:{ L1:"Suivi pipeline réactif — couverture insuffisante ou irrégulière.", L2:"Rituels de génération pipeline en place — couverture 3x maintenue, big bets identifiés.", L3:"Coache son équipe sur les motions de prospection modernes — les sprints sont réguliers et productifs.", L4:"Pipeline leader reconnu dans l'organisation — ses rituels et méthodes sont adoptés par d'autres équipes." }},
+      { id:'forecast', name:'Forecast Accuracy & CRM Hygiene',
+        callout:"Maîtriser la prévision des revenus avec précision (±10%). Garantir la qualité des données CRM. Créer une culture de discipline opérationnelle dans son équipe.",
+        exp:{ AVP:"Délivre un forecast fiable à ±10% pour son organisation. S'appuie sur la data pour ses décisions stratégiques. Tient ses RVPs au standard de la rigueur opérationnelle.", RVP:"Forecast accuracy ±10% à l'échelle de son équipe. S'assure que les opportunités sont à jour dans le CRM. Identifie et corrige les écarts avant les revues AVP.", GAM:"Mise à jour CRM hebdomadaire à 100%. Forecast deal-by-deal précis. Planifie ≥ 2 EBRs par compte et par an." },
+        grid:{ L1:"Forecast souvent inexact (>±20%) — CRM mis à jour de manière irrégulière.", L2:"Forecast à ±10-15% de manière consistante — CRM à jour hebdomadairement.", L3:"Forecast à ±10% — CRM irréprochable — identifie et corrige les écarts avant les revues.", L4:"Culture de rigueur opérationnelle installée dans son équipe — son standard devient la norme de l'organisation." }},
+      { id:'retention', name:'Retention, Expansion & Conso',
+        callout:"Piloter la rétention des revenus existants, l'expansion des comptes et la croissance à l'usage (NRR, usage-based growth). Faire de l'expansion une stratégie aussi structurée que le net new.",
+        exp:{ AVP:"Intègre la Conso comme dimension stratégique égale au NNAOV. Pilote le NRR de son segment. S'assure que ses RVPs et GAMs ont des plans d'expansion explicites.", RVP:"Cross-sell multi-cloud (≥ 2 produits/deal). Coache ses AEs sur les motions d'expansion. Identifie et soutient les opportunités d'upsell dans son territoire.", GAM:"GRR ≥ 95%, NRR ≥ 115%. Propriétaire des stratégies d'expansion sur ses comptes. Pilote l'adoption et l'usage des produits Salesforce comme levier de croissance." },
+        grid:{ L1:"Rétention assurée mais expansion peu structurée — plans d'upsell absents ou réactifs.", L2:"Plans d'expansion explicites par compte — cross-sell multi-cloud engagé, NRR suivi.", L3:"GRR ≥ 95%, NRR ≥ 115% — stratégies d'expansion actives et pilotées comme le net new.", L4:"La Conso est une discipline organisationnelle — son segment génère une croissance usage-based structurelle." }},
+      { id:'cxo', name:'CxO Engagement & AI Value Articulation',
+        callout:"Naviguer des organisations complexes et multi-stakeholders. Articuler la valeur business de l'IA et d'Agentforce au niveau C-suite. Être un trusted advisor stratégique reconnu par les décideurs.",
+        exp:{ AVP:"Interlocuteur naturel des PDG, CFO et CDO des comptes stratégiques de son segment. Articule la vision IA de Salesforce avec conviction et profondeur. Intervient comme accélérateur dans les deals > 1M€.", RVP:"Engage les C-levels sur les deals complexes. Prépare et délivre des executive reviews de haut niveau. Accompagne ses AEs sur les interactions C-suite clés.", GAM:"≥ 2 contacts C-level actifs par compte (réunions / trimestre). Multi-threading ≥ 5 contacts actifs. Positionné comme référence stratégique chez le client." },
+        grid:{ L1:"Interactions C-suite ponctuelles — discours IA en construction.", L2:"Engage régulièrement les C-levels — articule la valeur Agentforce avec clarté en contexte exécutif.", L3:"Trusted advisor reconnu par ≥ 2 CxOs par compte — son intervention accélère les deals > 1M€.", L4:"Référence IA au niveau C-suite dans son segment — son discours est cité comme modèle par ses pairs." }},
+      { id:'systemic', name:'Systemic Thinking & Environment Design',
+        callout:"Penser au niveau système plutôt qu'au niveau individuel. Concevoir des conditions de succès pour les équipes plutôt que de contrôler les comportements. Identifier les effets de second ordre de ses décisions.",
+        exp:{ AVP:"Conçoit des systèmes d'exécution (rituels, incentives, structures) qui créent les conditions de la performance sans micro-management. Anticipe les effets de bord de ses décisions organisationnelles.", RVP:"Crée les conditions de succès pour ses AEs (outils, accès ressources, rituels). Pense collectif avant individuel dans ses décisions de management.", GAM:"Orchestre l'écosystème interne autour de son compte (SE, FDE, CS, Partners). Conçoit des structures de collaboration efficaces pour les comptes complexes." },
+        grid:{ L1:"Intervient principalement au niveau individuel — peu de recul sur les effets systémiques de ses décisions.", L2:"Crée les conditions de succès pour son équipe — pense collectif avant individuel.", L3:"Conçoit des systèmes d'exécution (rituels, incentives, structures) sans micro-management — anticipe les effets de bord.", L4:"Son organisation est auto-apprenante et résiliente — il a conçu un système qui performe au-delà de sa présence." }},
+      { id:'industry', name:'Industry Expertise',
+        callout:"Maîtriser les tendances, défis et opportunités de transformation digitale du secteur. Être capable d'apporter une perspective sectorielle à forte valeur ajoutée dans les conversations clients.",
+        exp:{ AVP:"Référence sectorielle reconnue en interne et en externe. Contribue au positionnement GTM Salesforce sur sa verticale. Anticipe les disruptions IA dans son industrie.", RVP:"Maîtrise les pain points et les tendances clés de son secteur. Utilise cette expertise pour coacher ses AEs sur la qualification et le discours de valeur.", GAM:"Expert des enjeux business spécifiques de chacun de ses comptes stratégiques. Connecte les use cases Agentforce aux priorités sectorielles du client." },
+        grid:{ L1:"Connaissance générale du secteur — peine à apporter une perspective différenciante en contexte client.", L2:"Maîtrise les pain points et tendances clés — utilise cette expertise dans le coaching AE et les conversations clients.", L3:"Référence sectorielle en interne — son expertise enrichit le GTM et le discours de valeur de l'équipe.", L4:"Référence reconnue en externe — contribue au positionnement Salesforce sur sa verticale au-delà de son segment." }},
+      { id:'ethical', name:'Ethical & Long-Term Thinking',
+        callout:"Considérer les conséquences larges de ses décisions (biais IA, équité, santé du système long terme). Ancrer les valeurs Salesforce dans des décisions IA concrètes, pas seulement dans des déclarations d'intention.",
+        exp:{ AVP:"Intègre les enjeux éthiques IA dans les décisions de déploiement Agentforce. Garant de l'alignement entre ambition commerciale et valeurs Salesforce.", RVP:"Sensibilise ses AEs aux enjeux éthiques des use cases IA proposés aux clients. Prend en compte l'impact long terme sur la relation client.", GAM:"S'assure que les use cases Agentforce déployés chez ses clients respectent les principes éthiques et les engagements contractuels." },
+        grid:{ L1:"Conscient des enjeux éthiques IA, mais ils ne guident pas encore les décisions de manière systématique.", L2:"Intègre les considérations éthiques dans les use cases proposés aux clients — impact long terme pris en compte.", L3:"Garant de l'alignement entre ambition commerciale et valeurs Salesforce — ses équipes adoptent la même posture.", L4:"Référence éthique de l'organisation — ses prises de position influencent les décisions au-delà de son périmètre." }},
+      { id:'cross-functional', name:'Cross-functional Orchestration',
+        callout:"Aligner et coordonner des organisations transverses (Marketing, CS, SE, FDE, Partners) vers un objectif commun. Piloter par influence et par narratif plutôt que par autorité.",
+        exp:{ AVP:"Coordonne l'ensemble des ressources go-to-market de son segment. Aligne Marketing, CS, SE, Sales Strategy sur les priorités commerciales. Pilote les partenariats stratégiques (GSI, ISV).", RVP:"Mobilise les ressources transverses sur les deals à fort enjeu. Organise des deal reviews multi-fonctionnelles. S'assure de l'implication du FDE en amont sur les comptes agentiques.", GAM:"Pilote un Teaming Agreement formel avec les ressources clés du compte. Coordonne ≥ 3 rôles internes par compte avec des revues mensuelles." },
+        grid:{ L1:"Coordination transverse ponctuelle — les deal reviews multi-fonctionnelles sont rares.", L2:"Deal reviews multi-fonctionnelles régulières — Teaming Agreements en place sur les comptes clés.", L3:"Orchestre ≥ 3 rôles internes par compte avec efficacité — les ressources transverses s'engagent spontanément.", L4:"Conçoit les structures de collaboration à l'échelle du segment — son modèle d'orchestration est adopté en interne." }},
+    ]
+  }
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+
+const S = { role:'RVP', evals:{} };
+const LV = { L1:1, L2:2, L3:3, L4:4 };
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+
+function avg(ev){ if(!ev) return null; const vs=[ev.personal,ev.impact].filter(Boolean).map(l=>LV[l]); return vs.length?vs.reduce((a,b)=>a+b)/vs.length:null; }
+function lvl(a){ if(a===null) return null; return a<1.5?'L1':a<2.5?'L2':a<3.5?'L3':'L4'; }
+function chip(l,extra){ return l?`<span class="chip chip-${l}${extra?' '+extra:''}">${l}</span>`:''; }
+function findComp(id){ for(const p of PILLARS) for(const c of p.comps) if(c.id===id) return c; return null; }
+const total=PILLARS.reduce((a,p)=>a+p.comps.length,0);
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+
+function renderRoles(){
+  document.getElementById('roleGrid').innerHTML=Object.entries(ROLES).map(([role,r])=>{
+    const sel=S.role===role;
+    return`<button class="role-btn${sel?` sel-${role}`:''}" data-role="${role}">
+      <div class="role-row">
+        <div class="role-ico"><span class="role-emoji">${r.icon}</span><span class="role-id">${role}</span></div>
+        ${sel?'<span class="role-check">✓</span>':''}
+      </div>
+      <span class="role-tag">${r.tag}</span>
+      <p class="role-desc">${r.desc}</p>
+    </button>`;
+  }).join('');
+}
+
+function renderPillars(){
+  document.getElementById('pillars').innerHTML=PILLARS.map(p=>`
+    <div class="pillar">
+      <div class="pillar-hdr ${p.color}">
+        <div class="pillar-top">
+          <span class="pillar-emoji">${p.emoji}</span>
+          <h2 class="pillar-name">${p.name}</h2>
+          <span class="pillar-cnt">${p.comps.length} compétences</span>
+        </div>
+        <p class="pillar-desc">${p.desc}</p>
+      </div>
+      <div class="pillar-cards">${p.comps.map(renderCard).join('')}</div>
+    </div>`).join('');
+}
+
+function renderCard(c){
+  const ev=S.evals[c.id]; const a=avg(ev); const l=lvl(a);
+  return`<div class="card" id="card-${c.id}">
+    <button class="card-btn" data-comp="${c.id}">
+      <div class="card-left">
+        <div class="dot${l?` d${l}`:''}" id="dot-${c.id}"></div>
+        <span class="card-name">${c.name}</span>
+      </div>
+      <div class="card-right">
+        <span id="chip-${c.id}">${chip(l)}</span>
+        <span class="chev">▼</span>
+      </div>
+    </button>
+    <div class="card-body" id="body-${c.id}">
+      <div class="card-inner">
+        <div class="callout"><div class="callout-bar"></div><p class="callout-text">${c.callout}</p></div>
+        <div class="exp-lbl">◎ Ce qui est attendu — <span class="exp-role">${S.role}</span></div>
+        <div class="exp-box"><p class="exp-text" id="exp-${c.id}">${c.exp[S.role]}</p></div>
+        <div class="eval-wrap">
+          <div class="eval-hdr"><div class="eval-bar"></div><span class="eval-title">Simulateur d'évaluation</span></div>
+          ${DIMS.map(d=>{
+            const sel=(ev||{})[d.id]||null;
+            return`<div class="eval-dim">
+              <div class="dim-lbl"><span class="dim-name">${d.name}</span><span class="dim-hint">— ${d.hint}</span></div>
+              <div class="eval-btns">${LVS.map(lv=>`<button class="eb ${sel===lv.id?'a':'i'}${lv.id}" data-comp="${c.id}" data-dim="${d.id}" data-lv="${lv.id}"><div class="eid">${lv.id}</div><div class="esh">${lv.s}</div></button>`).join('')}</div>
+              <div class="dbox${sel?` dbox on d${sel}`:''}" id="db-${c.id}-${d.id}">${sel?`<strong>${sel} — ${LVS.find(x=>x.id===sel).label} : </strong>${c.grid[sel]}`:''}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── UPDATES ───────────────────────────────────────────────────────────────────
+
+function updateExpectations(){
+  document.querySelectorAll('[id^="exp-"]').forEach(el=>{
+    const c=findComp(el.id.slice(4)); if(c) el.textContent=c.exp[S.role];
+  });
+  document.querySelectorAll('.exp-role').forEach(el=>el.textContent=S.role);
+}
+
+function updateCardScore(id){
+  const a=avg(S.evals[id]); const l=lvl(a);
+  const dot=document.getElementById(`dot-${id}`);
+  if(dot) dot.className=`dot${l?` d${l}`:''}`;
+  const ch=document.getElementById(`chip-${id}`);
+  if(ch) ch.innerHTML=chip(l);
+}
+
+function updateDash(){
+  const evs=Object.entries(S.evals);
+  const done=evs.filter(([,e])=>e?.personal||e?.impact).length;
+  const dash=document.getElementById('dash');
+  if(!done){ dash.classList.remove('on'); return; }
+  dash.classList.add('on');
+
+  const avgs=evs.map(([,e])=>avg(e)).filter(Boolean);
+  const ga=avgs.reduce((a,b)=>a+b)/avgs.length;
+  const gl=lvl(ga);
+
+  document.getElementById('dashCnt').innerHTML=`<strong>${done}/${total}</strong> évaluées`;
+  const dc=document.getElementById('dashChip');
+  dc.className=`chip chip-${gl}`; dc.textContent=gl;
+  const db=document.getElementById('dashBar');
+  db.style.width=`${(ga/4)*100}%`; db.style.background=BARS[gl];
+  document.getElementById('dashRole').textContent=`Maturité globale — ${S.role}`;
+  const ov=document.getElementById('dashOverall');
+  ov.className=`chip chip-${gl}`; ov.textContent=`${gl} · ${LVS.find(l=>l.id===gl).label}`;
+
+  document.getElementById('dashPillars').innerHTML=PILLARS.map(p=>{
+    const pas=p.comps.map(c=>avg(S.evals[c.id])).filter(Boolean);
+    if(!pas.length) return'';
+    const pa=pas.reduce((a,b)=>a+b)/pas.length; const pl=lvl(pa);
+    return`<div class="prow">
+      <div class="prow-top">
+        <div class="prow-left"><span class="prow-emoji">${p.emoji}</span><span class="prow-name">${p.name}</span><span class="prow-cnt">${pas.length}/${p.comps.length}</span></div>
+        ${chip(pl)}
+      </div>
+      <div class="pbar-bg"><div class="pbar-fill" style="width:${(pa/4)*100}%;background:${BARS[pl]}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── EVENTS ────────────────────────────────────────────────────────────────────
+
+document.addEventListener('click',e=>{
+  // Role
+  const rb=e.target.closest('[data-role]');
+  if(rb){ S.role=rb.dataset.role; renderRoles(); updateExpectations(); updateDash(); return; }
+
+  // Accordion
+  const cb=e.target.closest('.card-btn[data-comp]');
+  if(cb){ document.getElementById(`card-${cb.dataset.comp}`).classList.toggle('open'); return; }
+
+  // Eval button
+  const eb=e.target.closest('.eb[data-comp]');
+  if(eb){
+    const{comp,dim,lv}=eb.dataset;
+    if(!S.evals[comp]) S.evals[comp]={};
+    const cur=S.evals[comp][dim];
+    S.evals[comp][dim]=cur===lv?null:lv;
+    const nl=S.evals[comp][dim];
+
+    // update buttons
+    eb.closest('.eval-btns').querySelectorAll('.eb').forEach(b=>{
+      const isA=b.dataset.lv===nl;
+      b.className=`eb ${isA?'a':'i'}${b.dataset.lv}`;
+    });
+
+    // update desc box
+    const dbox=document.getElementById(`db-${comp}-${dim}`);
+    if(dbox){
+      if(nl){ const co=findComp(comp); dbox.className=`dbox on d${nl}`; dbox.innerHTML=`<strong>${nl} — ${LVS.find(x=>x.id===nl).label} : </strong>${co.grid[nl]}`; }
+      else{ dbox.className='dbox'; dbox.innerHTML=''; }
+    }
+
+    updateCardScore(comp);
+    updateDash();
+    return;
+  }
+
+  // Dashboard toggle
+  if(e.target.closest('#dashTog')){
+    document.getElementById('dash').classList.toggle('open');
+    return;
+  }
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+renderRoles();
+renderPillars();
+</script>
+</body>
+</html>
